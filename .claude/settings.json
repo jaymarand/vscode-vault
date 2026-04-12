@@ -25,7 +25,12 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8503/_stcore/health)",
       "Bash(gh auth:*)",
       "Bash(gh repo:*)",
-      "Bash(git -C /Users/jpl/Projects/vscode/vscode_vault/vscode_vault rev-parse --git-dir)"
+      "Bash(git -C /Users/jpl/Projects/vscode/vscode_vault/vscode_vault rev-parse --git-dir)",
+      "Bash(git commit -m ':*)",
+      "WebSearch",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)"
     ],
     "additionalDirectories": [
       "/Users/jpl/Projects/vscode/vscode_vault/vscode_vault/projects/hr-document-generator"
