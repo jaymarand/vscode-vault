@@ -1,4 +1,8 @@
 .env
+.env.local
 CLAUDE.local.md
 .claude/settings.local.json
 node_modules/
+.obsidian/
+__pycache__/
+*.pyc

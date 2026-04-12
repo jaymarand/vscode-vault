@@ -1,1 +1,34 @@
-{}
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ':*)",
+      "Bash(pip3 install:*)",
+      "Bash(python3)",
+      "Bash(cp \"/Users/jpl/Projects/vscode/vscode_vault/vscode_vault/.claude/skills/document-recreator/references/Warning Record Vanessa Sevier 2.10.docx\" /Users/jpl/Projects/vscode/vscode_vault/vscode_vault/projects/hr-document-generator/app/templates/warning_template.docx)",
+      "Bash(cp \"/Users/jpl/Projects/vscode/vscode_vault/vscode_vault/.claude/skills/document-recreator/references/Marlow_Dalton Annual Review.docx\" /Users/jpl/Projects/vscode/vscode_vault/vscode_vault/projects/hr-document-generator/app/templates/review_template.docx)",
+      "Bash(python3 -m streamlit run app/streamlit_app.py --server.headless true --server.port 8501)",
+      "Bash(curl -s http://localhost:8501)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8501/_stcore/health)",
+      "Bash(pkill -f \"streamlit run\")",
+      "Bash(python3 -m streamlit --version)",
+      "Bash(python3 -m streamlit run app/streamlit_app.py --server.headless true --server.port 8502)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8502/_stcore/health)",
+      "Bash(ls -la /Users/jpl/Projects/vscode/vscode_vault/vscode_vault/outputs/reviews/*.docx)",
+      "Bash(ls -la /Users/jpl/Projects/vscode/vscode_vault/vscode_vault/projects/hr-document-generator/outputs/reviews/*.docx)",
+      "Bash(mv /Users/jpl/Projects/vscode/vscode_vault/vscode_vault/projects/hr-document-generator/outputs/reviews/*.docx /Users/jpl/Projects/vscode/vscode_vault/vscode_vault/outputs/reviews/)",
+      "Bash(ls /Users/jpl/Projects/vscode/vscode_vault/vscode_vault/outputs/reviews/*.docx)",
+      "Bash(python3 app/telegram_bot.py)",
+      "Bash(echo \"Bot PID: $!\")",
+      "Bash(kill 10884)",
+      "Bash(python3 bot.py)",
+      "Bash(python3 -m streamlit run app/streamlit_app.py --server.headless true --server.port 8503)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8503/_stcore/health)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(git -C /Users/jpl/Projects/vscode/vscode_vault/vscode_vault rev-parse --git-dir)"
+    ],
+    "additionalDirectories": [
+      "/Users/jpl/Projects/vscode/vscode_vault/vscode_vault/projects/hr-document-generator"
+    ]
+  }
+}
