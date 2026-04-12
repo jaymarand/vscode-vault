@@ -6,10 +6,10 @@
 
 | Employee | Job Title | Review Due Date | Days Past Due |
 |----------|-----------|----------------|---------------|
-| Denise Givens | Retail Sales Associate | 11/09/2025 | 154 |
-| Ciara Ruff | Retail Merchandise Processor | 11/20/2025 | 143 |
-| Esther Stratton | Clothing Hanger | 12/25/2025 | 108 |
-| Jerry Prather | Retail Merchandise Processor | 12/27/2025 | 106 |
+| ~~Denise Givens~~ | ~~Retail Sales Associate~~ | ~~11/09/2025~~ | Done |
+| ~~Ciara Ruff~~ | ~~Retail Merchandise Processor~~ | ~~11/20/2025~~ | Done |
+| ~~Esther Stratton~~ | ~~Clothing Hanger~~ | ~~12/25/2025~~ | Done |
+| ~~Jerry Prather~~ | ~~Retail Merchandise Processor~~ | ~~12/27/2025~~ | Done |
 | ~~Viia Hubbard~~ | ~~Retail Merchandise Processor~~ | ~~01/01/2026~~ | Done |
 | ~~Leidy Mazariegos Morales~~ | ~~Retail Team Leader~~ | ~~02/04/2026~~ | Done |
 | ~~Jessica Ellis~~ | ~~Retail Merchandise Processor~~ | ~~03/27/2026~~ | Done |
