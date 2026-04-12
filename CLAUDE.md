@@ -15,6 +15,7 @@ These files contain the details. Read them when relevant -- don't ask Jason to r
 - @context/team.md -- Key people at Goodwill, solo at JPL
 - @context/current-priorities.md -- What's on the plate right now
 - @context/goals.md -- Q2 2026 goals and milestones
+- @context/assistant-notes.md -- Learned behaviors, app details, how to check things
 
 ## Tool Integrations
 
@@ -69,6 +70,8 @@ Memory + context files + decision log = your assistant gets smarter over time wi
 Active workstreams live in `projects/`. Each project gets a folder with a README.
 
 Current projects:
+- `projects/hr-document-generator/` -- Streamlit app for HR docs (coachings, warnings, reviews, PDPs)
+- `projects/telegram-assistant/` -- Claude-powered Telegram bot (main assistant)
 - `projects/website-redesign-pipeline/` -- JPL's core automated pipeline
 - `projects/grand-opening/` -- June 2 grand opening ($50K target)
 - `projects/pricing-model-rollout/` -- Good/Better/Best pricing rollout
