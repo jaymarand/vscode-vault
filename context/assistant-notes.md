@@ -23,7 +23,9 @@ Cross-reference both. If a completed file exists but the tracker doesn't reflect
 - "Interaction with consumers" trait — always use "Meets expectations." (consumers = people with disabilities Goodwill serves)
 - Trait comments must be 11pt font for page spacing
 - Goals: exactly 3, position-specific, deadlines ~1 year after review period end
-- Supervisor for Woodlawn stores: Holscher, Ciera
+- Woodlawn store was renamed to Tri-County — use Tri-County going forward
+- Supervisor for Tri-County (formerly Woodlawn): Holscher, Ciera
+- PDP tracker: `outputs/pdps/pdp-tracker.md` — 16 district leadership staff
 
 ## Telegram Assistant
 

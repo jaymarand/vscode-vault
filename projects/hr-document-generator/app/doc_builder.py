@@ -16,6 +16,15 @@ from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 RATING_COLS = {"E": 1, "AB": 2, "G": 3, "F": 4, "U": 5}
@@ -489,6 +498,287 @@ def build_pdp_docx(
         # Resource highlighting — no checkbox change needed, the template has text labels
 
     return _to_bytes(doc)
+
+
+FILLABLE_TEMPLATE = (
+    Path(__file__).resolve().parent.parent.parent.parent
+    / ".claude/skills/document-recreator/references"
+    / "Professional Development Plan Template_Fillable.pdf"
+)
+
+
+def build_pdp_fillable_pdf(
+    employee_name: str,
+    position: str,
+    location: str,
+    date: str,
+    ai_content: dict,
+) -> bytes:
+    """Fill the official Goodwill PDP fillable PDF template — output is editable."""
+    from pypdf import PdfReader, PdfWriter
+
+    reader = PdfReader(str(FILLABLE_TEMPLATE))
+    writer = PdfWriter()
+    writer.append(reader)
+
+    goals = list(ai_content.get("goals_parsed") or [])
+    while len(goals) < 3:
+        goals.append({})
+    actions = list(ai_content.get("actions_parsed") or [])
+
+    # ── Text fields ──────────────────────────────────────────────────────────
+    fields: dict = {
+        "Name":               employee_name,
+        "Position":           position,
+        "Work Location":      location,
+        "Date Plan Submitted": date,
+        "Ultimate Goal":      ai_content.get("ULTIMATE GOAL", ""),
+        "Goal 1":             goals[0].get("goal", ""),
+        "Goal 2":             goals[1].get("goal", ""),
+        "Goal 3":             goals[2].get("goal", ""),
+        "My Why":             goals[0].get("why", ""),
+        "My Why_2":           goals[1].get("why", ""),
+        "My Why_3":           goals[2].get("why", ""),
+    }
+
+    # Action rows & support partners
+    support_keys = [
+        "Support Partnero 1 o 2 o 3",
+        "Support Partnero 1 o 2 o 3_2",
+        "Support Partnero 1 o 2 o 3_3",
+        "Support Partnero 1 o 2 o 3_4",
+        "Support Partnero 1 o 2 o 3_5",
+        "Support Partnero 1 o 2 o 3_6",  # only 5 in template but safe
+    ]
+    for i, action in enumerate(actions[:6]):
+        fields[f"ActionRow{i + 1}"] = action.get("action", "")
+        if i < len(support_keys):
+            fields[support_keys[i]] = action.get("support", "")
+
+    # ── Checkboxes ───────────────────────────────────────────────────────────
+    def chk(condition: bool) -> str:
+        return "/Yes" if condition else "/Off"
+
+    # Goal type checkboxes
+    TYPE_FIELDS = {
+        "personal":     ["1Personal", "2Personal", "3Personal"],
+        "technical":    ["1Tech",     "2Tech",     "3Tech"],
+        "leadership":   ["1Lead",     "2Lead",     "3Lead"],
+        "career":       ["1Career",   "2Career",   "3Career"],
+    }
+    for key, fnames in TYPE_FIELDS.items():
+        for i, fname in enumerate(fnames):
+            t = goals[i].get("type", "").lower()
+            fields[fname] = chk(key in t)
+
+    # Timeframe checkboxes
+    TF_FIELDS = [
+        ("1 month",  ["1month",   "2month",   "3month"]),
+        ("3 months", ["13month",  "23month",  "33month"]),
+        ("6 months", ["16 month", "26 month", "36 month"]),
+        ("1 year",   ["1Year",    "2Year",    "3Year"]),
+    ]
+    for tf, fnames in TF_FIELDS:
+        for i, fname in enumerate(fnames):
+            fields[fname] = chk(goals[i].get("timeframe", "").lower() == tf)
+
+    # Action → goal number checkboxes
+    for i, action in enumerate(actions[:6]):
+        gn = str(action.get("goals", ""))
+        for g in [1, 2, 3]:
+            fields[f"A{i + 1}G{g}"] = chk(str(g) in gn)
+
+    # Fill all pages
+    for page in writer.pages:
+        writer.update_page_form_field_values(page, fields)
+
+    buf = io.BytesIO()
+    writer.write(buf)
+    buf.seek(0)
+    return buf.read()
+
+
+def build_pdp_pdf(
+    employee_name: str,
+    position: str,
+    location: str,
+    date: str,
+    ai_content: dict,
+) -> bytes:
+    """Build a landscape PDF matching the Goodwill PDP format."""
+    buf = io.BytesIO()
+
+    PAGE = landscape(letter)  # 792 x 612 pts
+    MARGIN = 0.45 * inch
+    W = PAGE[0] - 2 * MARGIN   # usable width ~703pt
+    COL = W / 3
+
+    BLUE = colors.HexColor("#003087")
+    LIGHT = colors.HexColor("#dce6f1")
+
+    base = getSampleStyleSheet()
+
+    def sty(name, **kw):
+        return ParagraphStyle(name, parent=base["Normal"], **kw)
+
+    title_sty  = sty("T", fontSize=14, fontName="Helvetica-Bold", textColor=BLUE, alignment=TA_CENTER)
+    label_sty  = sty("L", fontSize=9,  fontName="Helvetica-Bold")
+    cell_sty   = sty("C", fontSize=8,  fontName="Helvetica",  leading=11)
+    hdr_sty    = sty("H", fontSize=9,  fontName="Helvetica-Bold", textColor=colors.white, alignment=TA_CENTER)
+    shdr_sty   = sty("SH", fontSize=8, fontName="Helvetica-Bold", textColor=colors.white, alignment=TA_CENTER)
+    foot_sty   = sty("F", fontSize=6,  fontName="Helvetica-Oblique")
+
+    def p(text, s=None):
+        s = s or cell_sty
+        return Paragraph(str(text).replace("\n", "<br/>"), s)
+
+    def checked(options: list[str], selected: str) -> str:
+        sel = selected.lower().strip()
+        lines = []
+        for opt in options:
+            mark = "[X]" if opt.lower().strip() in sel or sel in opt.lower().strip() else "[ ]"
+            lines.append(f"{mark}  {opt}")
+        return "<br/>".join(lines)
+
+    goals   = (ai_content.get("goals_parsed") or [])[:3]
+    while len(goals) < 3:
+        goals.append({})
+    actions = (ai_content.get("actions_parsed") or [])
+
+    doc = SimpleDocTemplate(
+        buf, pagesize=PAGE,
+        leftMargin=MARGIN, rightMargin=MARGIN,
+        topMargin=MARGIN, bottomMargin=MARGIN,
+    )
+    els = []
+
+    # ── PAGE 1 ──────────────────────────────────────────────────────────────
+
+    els.append(p("Professional Development Plan", title_sty))
+    els.append(Spacer(1, 4))
+
+    info = Table(
+        [[p(f"<b>Name:</b>  {employee_name}", cell_sty),
+          p(f"<b>Date:</b>  {date}", cell_sty)],
+         [p(f"<b>Position:</b>  {position}", cell_sty),
+          p(f"<b>Work Location:</b>  {location}", cell_sty)]],
+        colWidths=[W / 2, W / 2],
+    )
+    info.setStyle(TableStyle([
+        ("BOX",         (0, 0), (-1, -1), 0.5, colors.black),
+        ("INNERGRID",   (0, 0), (-1, -1), 0.5, colors.black),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING",(0, 0), (-1, -1), 6),
+        ("TOPPADDING",  (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING",(0,0), (-1, -1), 4),
+    ]))
+    els.append(info)
+    els.append(Spacer(1, 4))
+    els.append(p(f"<b>My ultimate goal:</b>  {ai_content.get('ULTIMATE GOAL', '')}", cell_sty))
+    els.append(Spacer(1, 6))
+
+    TYPES = ["Personal/Interpersonal Growth", "Technical/Job Skills",
+             "Leadership Capabilities", "Career Planning"]
+    TFS   = ["1 month", "3 months", "6 months", "1 year"]
+
+    goal_data = [
+        # Header
+        [p("Goal 1", hdr_sty), p("Goal 2", hdr_sty), p("Goal 3", hdr_sty)],
+        # Goal text
+        [p(goals[0].get("goal", "")), p(goals[1].get("goal", "")), p(goals[2].get("goal", ""))],
+        # Type header
+        [p("Type of Goal", shdr_sty), p("Type of Goal", shdr_sty), p("Type of Goal", shdr_sty)],
+        # Type checkboxes
+        [p(checked(TYPES, goals[0].get("type", ""))),
+         p(checked(TYPES, goals[1].get("type", ""))),
+         p(checked(TYPES, goals[2].get("type", "")))],
+        # Why header
+        [p("My Why", shdr_sty), p("My Why", shdr_sty), p("My Why", shdr_sty)],
+        # Why text
+        [p(goals[0].get("why", "")), p(goals[1].get("why", "")), p(goals[2].get("why", ""))],
+        # Timeframe header
+        [p("Timeframe", shdr_sty), p("Timeframe", shdr_sty), p("Timeframe", shdr_sty)],
+        # Timeframe checkboxes
+        [p(checked(TFS, goals[0].get("timeframe", ""))),
+         p(checked(TFS, goals[1].get("timeframe", ""))),
+         p(checked(TFS, goals[2].get("timeframe", "")))],
+    ]
+
+    BLUE_ROWS = [0, 2, 4, 6]
+    goal_ts = [
+        ("GRID",          (0, 0), (-1, -1), 0.5, colors.black),
+        ("VALIGN",        (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 6),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]
+    for r in BLUE_ROWS:
+        goal_ts.append(("BACKGROUND", (0, r), (-1, r), BLUE))
+
+    gt = Table(goal_data, colWidths=[COL, COL, COL])
+    gt.setStyle(TableStyle(goal_ts))
+    els.append(gt)
+
+    # ── PAGE 2 ──────────────────────────────────────────────────────────────
+    els.append(PageBreak())
+    els.append(p("Professional Development Plan", title_sty))
+    els.append(Spacer(1, 6))
+
+    AW = [W * r for r in [0.29, 0.07, 0.14, 0.14, 0.12, 0.12, 0.12]]
+    RESOURCES = ["EAP", "HR", "L&D", "OC", "Wellness", "Other"]
+
+    act_data = [[
+        p("Action", shdr_sty),
+        p("Goal(s)", shdr_sty),
+        p("Support Partner*", shdr_sty),
+        p("Resources**", shdr_sty),
+        p("Begin by:", shdr_sty),
+        p("Complete by:", shdr_sty),
+        p("Achieved", shdr_sty),
+    ]]
+    for act in actions[:6]:
+        gn    = str(act.get("goals", ""))
+        gchecks = "<br/>".join(
+            f"{'[X]' if str(n) in gn else '[ ]'}  {n}" for n in [1, 2, 3]
+        )
+        res   = act.get("resource", "Other")
+        rchecks = "<br/>".join(
+            f"{'[X]' if r == res else '[ ]'}  {r}" for r in RESOURCES
+        )
+        act_data.append([
+            p(act.get("action", "")),
+            p(gchecks),
+            p(act.get("support", "")),
+            p(rchecks),
+            p(act.get("begin_by", "")),
+            p(act.get("complete_by", "")),
+            p("[ ] Yes<br/>[ ] No"),
+        ])
+
+    at = Table(act_data, colWidths=AW)
+    at.setStyle(TableStyle([
+        ("BACKGROUND",   (0, 0), (-1, 0), BLUE),
+        ("GRID",         (0, 0), (-1, -1), 0.5, colors.black),
+        ("VALIGN",       (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING",  (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING",   (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING",(0, 0), (-1, -1), 3),
+    ]))
+    els.append(at)
+    els.append(Spacer(1, 6))
+    els.append(p(
+        "*Support Partner = A person who provides guidance, accountability, or expertise "
+        "(e.g., manager, peer, mentor, expert etc.)  "
+        "**EAP = Employee Assistance Program; L&D = OVGI Learning and Development; "
+        "HR = OVGI Human Resources; OC = OVGI Opportunity Center; Wellness = OVGI Health and Wellness",
+        foot_sty,
+    ))
+
+    doc.build(els)
+    buf.seek(0)
+    return buf.read()
 
 
 def _replace_static_review_template(

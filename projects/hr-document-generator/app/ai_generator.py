@@ -228,15 +228,17 @@ def generate_pdp(
     notes: str,
 ) -> dict:
     """Generate a Professional Development Plan with 3 goals and action steps."""
-    prompt = f"""Generate a Professional Development Plan for a Goodwill employee.
+    has_existing = "Existing PDP to use as a base" in notes
+    prompt = f"""{"Refine and improve" if has_existing else "Generate"} a Professional Development Plan for a Goodwill employee.
 
 Employee: {employee_name}
 Position: {position}
 Work Location: {location}
 Their ultimate goal: {ultimate_goal}
 
-Manager's notes about this employee's development needs:
+{"Manager's notes and existing PDP content:" if has_existing else "Manager's notes about this employee's development needs:"}
 {notes}
+{"Keep what is working in the existing PDP. Improve goal clarity, strengthen the 'My Why' statements, and ensure action steps are specific and actionable. Preserve the employee's own language and intent." if has_existing else ""}
 
 The PDP has 3 goals. Each goal should be a different type:
 - Personal/Interpersonal Growth (EI, self-awareness, communication, relationships)
@@ -394,6 +396,153 @@ ACTION 6 RESOURCE:
             "goals": result.get(f"ACTION {i} GOALS", ""),
             "support": result.get(f"ACTION {i} SUPPORT", ""),
             "resource": result.get(f"ACTION {i} RESOURCE", ""),
+        })
+    result["actions_parsed"] = actions
+
+    return result
+
+
+def parse_pdp_document(client: anthropic.Anthropic, pdf_bytes: bytes) -> dict:
+    """Extract structured PDP data from an uploaded PDF using Claude vision."""
+    import base64
+    b64 = base64.b64encode(pdf_bytes).decode()
+
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=3000,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {"type": "base64", "media_type": "application/pdf", "data": b64},
+                },
+                {
+                    "type": "text",
+                    "text": """Extract all data from this Professional Development Plan PDF and return it in this exact format.
+Extract exactly what is written — do not paraphrase or generate new content. If a field is blank, leave the value empty.
+
+EMPLOYEE NAME:
+[employee's full name]
+
+POSITION:
+[position/job title]
+
+LOCATION:
+[work location]
+
+DATE:
+[date in MM/DD/YYYY format]
+
+ULTIMATE GOAL:
+[the employee's ultimate goal statement]
+
+GOAL 1:
+[Goal 1 statement]
+
+GOAL 1 TYPE:
+[Exactly one of: Personal/Interpersonal Growth, Technical/Job Skills, Leadership Capabilities, Career Planning — pick the primary checked type]
+
+GOAL 1 WHY:
+[My Why text for Goal 1]
+
+GOAL 1 TIMEFRAME:
+[Exactly one of: 1 month, 3 months, 6 months, 1 year — the checked timeframe]
+
+GOAL 2:
+[Goal 2 statement]
+
+GOAL 2 TYPE:
+[Type]
+
+GOAL 2 WHY:
+[My Why text]
+
+GOAL 2 TIMEFRAME:
+[Timeframe]
+
+GOAL 3:
+[Goal 3 statement]
+
+GOAL 3 TYPE:
+[Type]
+
+GOAL 3 WHY:
+[My Why text]
+
+GOAL 3 TIMEFRAME:
+[Timeframe]
+
+ACTION 1:
+[Action step text]
+
+ACTION 1 GOALS:
+[Goal number(s) this action supports, e.g. "1" or "1,2"]
+
+ACTION 1 SUPPORT:
+[Support partner name or role]
+
+ACTION 2:
+[Action step text]
+
+ACTION 2 GOALS:
+[Goal numbers]
+
+ACTION 2 SUPPORT:
+[Support partner]
+
+ACTION 3:
+[Action step text]
+
+ACTION 3 GOALS:
+[Goal numbers]
+
+ACTION 3 SUPPORT:
+[Support partner]
+
+ACTION 4:
+[Action step text]
+
+ACTION 4 GOALS:
+[Goal numbers]
+
+ACTION 4 SUPPORT:
+[Support partner]
+
+ACTION 5:
+[Action step text]
+
+ACTION 5 GOALS:
+[Goal numbers]
+
+ACTION 5 SUPPORT:
+[Support partner]""",
+                },
+            ],
+        }],
+    )
+
+    result = _parse_sections(response.content[0].text)
+
+    # Structure goals
+    goals = []
+    for i in range(1, 4):
+        goals.append({
+            "goal": result.get(f"GOAL {i}", ""),
+            "type": result.get(f"GOAL {i} TYPE", ""),
+            "why": result.get(f"GOAL {i} WHY", ""),
+            "timeframe": result.get(f"GOAL {i} TIMEFRAME", ""),
+        })
+    result["goals_parsed"] = goals
+
+    # Structure actions
+    actions = []
+    for i in range(1, 6):
+        actions.append({
+            "action": result.get(f"ACTION {i}", ""),
+            "goals": result.get(f"ACTION {i} GOALS", ""),
+            "support": result.get(f"ACTION {i} SUPPORT", ""),
+            "resource": "Other",
         })
     result["actions_parsed"] = actions
 

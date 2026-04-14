@@ -2,7 +2,7 @@
 
 *Updated: 2026-04-12*
 
-## Woodlawn Store
+## Tri-County Store (formerly Woodlawn)
 
 | Employee | Job Title | Review Due Date | Days Past Due |
 |----------|-----------|----------------|---------------|
@@ -59,7 +59,7 @@
 
 | Store | Count | Oldest |
 |-------|-------|--------|
-| Woodlawn | 7 | 11/09/2025 |
+| Tri-County | 7 | 11/09/2025 |
 | Shop Goodwill | 4 | 12/23/2025 |
 | Beechmont | 3 | 01/01/2026 |
 | Fairfield | 3 | 02/05/2026 |
