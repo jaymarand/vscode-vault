@@ -31,12 +31,15 @@ VAULT_OUTPUTS = Path(__file__).resolve().parent.parent.parent.parent / "outputs"
 
 
 def _archive(docx_bytes: bytes, filename: str, doc_type: str):
-    """Save generated doc to vault outputs folder."""
-    folder = VAULT_OUTPUTS / doc_type
-    folder.mkdir(parents=True, exist_ok=True)
-    path = folder / filename
-    path.write_bytes(docx_bytes)
-    return path
+    """Save generated doc to vault outputs folder. Skips silently if not writable (e.g. cloud)."""
+    try:
+        folder = VAULT_OUTPUTS / doc_type
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / filename
+        path.write_bytes(docx_bytes)
+        return path
+    except Exception:
+        return None
 
 # ---------------------------------------------------------------------------
 # Config
@@ -223,7 +226,7 @@ with tab_coaching:
             )
             filename = f"{c_date.strftime('%Y-%m-%d')}_{c_employee.replace(' ', '-')}_coaching.docx"
             saved = _archive(docx_bytes, filename, "coachings")
-            st.caption(f"Saved to `{saved}`")
+            if saved: st.caption(f"Saved to `{saved}`")
             st.download_button(
                 label="Download Coaching Form",
                 data=docx_bytes,
@@ -329,7 +332,7 @@ with tab_warning:
             )
             filename = f"{w_date.strftime('%Y-%m-%d')}_{w_employee.replace(' ', '-')}_warning.docx"
             saved = _archive(docx_bytes, filename, "warnings")
-            st.caption(f"Saved to `{saved}`")
+            if saved: st.caption(f"Saved to `{saved}`")
             st.download_button(
                 label="Download Warning Record",
                 data=docx_bytes,
@@ -513,7 +516,7 @@ with tab_review:
             )
             filename = f"{r_to.strftime('%Y-%m-%d')}_{r_employee.replace(' ', '-')}_annual-review.docx"
             saved = _archive(docx_bytes, filename, "reviews")
-            st.caption(f"Saved to `{saved}`")
+            if saved: st.caption(f"Saved to `{saved}`")
             st.download_button(
                 label="Download Annual Review",
                 data=docx_bytes,
@@ -728,7 +731,7 @@ with tab_pdp:
                 )
             filename = f"{p_date.strftime('%Y-%m-%d')}_{p_employee.replace(' ', '-')}_pdp.pdf"
             saved = _archive(pdf_bytes, filename, "pdps")
-            st.caption(f"Saved to `{saved}`")
+            if saved: st.caption(f"Saved to `{saved}`")
             st.download_button(
                 label="Download Development Plan (PDF)",
                 data=pdf_bytes,
@@ -1020,7 +1023,7 @@ with tab_store_review:
             )
             filename = f"{sr_visit_date.strftime('%Y-%m-%d')}_{sr_store.replace(' ', '-')}_store-review.xlsx"
             saved = _archive(xlsx, filename, "store-reviews")
-            st.caption(f"Saved to `{saved}`")
+            if saved: st.caption(f"Saved to `{saved}`")
             st.download_button(
                 label="Download Store Review (Excel)",
                 data=xlsx,
