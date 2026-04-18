@@ -373,13 +373,13 @@ def build_store_review_xlsx(
         _write_cell(ws, 5, 8, manual["num_new_hires"])
 
     # ── General Metrics ───────────────────────────────────────────────────────
-    if manual.get("employees_spoken_to"):
-        _write_cell(ws, 3, 12, manual["employees_spoken_to"])
+    # Write employees directly to L3 (bypass merge detection — L3 is inside K2:N3
+    # which holds the "General Metrics" label at K2; _write_cell would overwrite it)
+    ws.cell(row=3, column=12).value = manual.get("employees_spoken_to") or 0
     huddle = manual.get("huddles", "")
     if manual.get("huddles_days_missing"):
         huddle = f"{manual['huddles_days_missing']} days missing"
-    if huddle:
-        _write_cell(ws, 4, 12, huddle)
+    _write_cell(ws, 4, 12, huddle or "Complete")
     if manual.get("ecommerce_pct_to_budget") is not None:
         _write_cell(ws, 7, 12, manual["ecommerce_pct_to_budget"])
     if manual.get("ecommerce_totes_mtd") is not None:
@@ -432,12 +432,13 @@ def build_store_review_xlsx(
         if manual.get(key):
             _write_cell(ws, row, 4, manual[key])
 
-    # ── Pull/Rotation Yes/No (col H=8) ─────────────────────────────────────
+    # ── Pull/Rotation Yes/No (col I=9) ─────────────────────────────────────
+    # Labels are merged F:H (cols 6-8) — write Yes/No to col I (9)
     for row, key in [(15, "pull_womens"), (16, "pull_mens"), (17, "pull_kids"),
                      (18, "pull_wares"), (19, "pull_shoes"), (20, "pull_books"),
                      (21, "pull_em")]:
         if manual.get(key):
-            _write_cell(ws, row, 8, manual[key])
+            ws.cell(row=row, column=9).value = manual[key]
 
     # ── Error Rate Racks (col M=13) ────────────────────────────────────────
     for row, key in [(14, "error_total_items"), (15, "error_wrong_price"),
