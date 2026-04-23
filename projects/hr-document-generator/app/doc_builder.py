@@ -29,6 +29,14 @@ TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 RATING_COLS = {"E": 1, "AB": 2, "G": 3, "F": 4, "U": 5}
 
+UNICODE_JUNK = "\u200b\u200c\u200d\ufeff\u00a0"
+
+
+def _clean(text: str) -> str:
+    for ch in UNICODE_JUNK:
+        text = text.replace(ch, "")
+    return text
+
 
 def _to_bytes(doc: Document) -> bytes:
     buf = io.BytesIO()
@@ -39,6 +47,7 @@ def _to_bytes(doc: Document) -> bytes:
 
 def _replace_in_paragraph(paragraph, old: str, new: str):
     """Replace text in a paragraph while preserving formatting of the first run."""
+    new = _clean(new)
     full = paragraph.text
     if old not in full:
         return False
@@ -65,6 +74,7 @@ def _replace_in_cell(cell, old: str, new: str):
 
 def _set_paragraph_text(paragraph, text: str):
     """Set paragraph text, keeping formatting of the first run."""
+    text = _clean(text)
     if paragraph.runs:
         paragraph.runs[0].text = text
         for run in paragraph.runs[1:]:
