@@ -640,7 +640,7 @@ def build_pdp_pdf(
 
     def p(text, s=None):
         s = s or cell_sty
-        return Paragraph(str(text).replace("\n", "<br/>"), s)
+        return Paragraph(_clean(str(text)).replace("\n", "<br/>"), s)
 
     def checked(options: list[str], selected: str) -> str:
         sel = selected.lower().strip()
